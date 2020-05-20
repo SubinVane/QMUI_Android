@@ -1,3 +1,19 @@
+/*
+ * Tencent is pleased to support the open source community by making QMUI_Android available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the MIT License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.qmuiteam.qmui.util;
 
 import android.animation.Animator;
@@ -8,6 +24,7 @@ import android.animation.ValueAnimator;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
@@ -18,8 +35,12 @@ import android.graphics.RectF;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.support.annotation.ColorInt;
-import android.support.annotation.Nullable;
+import androidx.annotation.ColorInt;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.core.widget.ImageViewCompat;
+
 import android.view.TouchDelegate;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +53,8 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.ListView;
+
+import com.qmuiteam.qmui.widget.pullRefreshLayout.QMUIPullRefreshLayout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +71,7 @@ public class QMUIViewHelper {
 
 
     private static final int[] APPCOMPAT_CHECK_ATTRS = {
-            android.support.v7.appcompat.R.attr.colorPrimary
+            androidx.appcompat.R.attr.colorPrimary
     };
 
     public static void checkAppCompatTheme(Context context) {
@@ -107,19 +130,23 @@ public class QMUIViewHelper {
 
     @SuppressWarnings("deprecation")
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-    public static void setBackgroundKeepingPadding(View view, Drawable drawable) {
-        int[] padding = new int[]{view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), view.getPaddingBottom()};
+    public static void setBackground(View view, Drawable drawable) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             view.setBackground(drawable);
         } else {
             view.setBackgroundDrawable(drawable);
         }
+    }
+
+    public static void setBackgroundKeepingPadding(View view, Drawable drawable) {
+        int[] padding = new int[]{view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), view.getPaddingBottom()};
+        view.setBackground(drawable);
         view.setPadding(padding[0], padding[1], padding[2], padding[3]);
     }
 
     @SuppressWarnings("deprecation")
     public static void setBackgroundKeepingPadding(View view, int backgroundResId) {
-        setBackgroundKeepingPadding(view, view.getResources().getDrawable(backgroundResId));
+        setBackgroundKeepingPadding(view, ContextCompat.getDrawable(view.getContext(), backgroundResId));
     }
 
     public static void setBackgroundColorKeepPadding(View view, @ColorInt int color) {
@@ -148,7 +175,7 @@ public class QMUIViewHelper {
      * @param stepDuration 每一步变化的时长
      * @param endAction    动画结束后的回调
      */
-    public static void playViewBackgroundAnimation(final View v, @ColorInt int bgColor, int[] alphaArray, int stepDuration, final Runnable endAction) {
+    public static Animator playViewBackgroundAnimation(final View v, @ColorInt int bgColor, int[] alphaArray, int stepDuration, final Runnable endAction) {
         int animationCount = alphaArray.length - 1;
 
         Drawable bgDrawable = new ColorDrawable(bgColor);
@@ -186,6 +213,7 @@ public class QMUIViewHelper {
         });
         animatorSet.playSequentially(animatorList);
         animatorSet.start();
+        return animatorSet;
     }
 
     public static void playViewBackgroundAnimation(final View v, @ColorInt int bgColor, int[] alphaArray, int stepDuration) {
@@ -347,10 +375,13 @@ public class QMUIViewHelper {
         }
     }
 
-    public static void clearValueAnimator(ValueAnimator animator) {
+    public static void clearValueAnimator(Animator animator) {
         if (animator != null) {
             animator.removeAllListeners();
-            animator.removeAllUpdateListeners();
+            if (animator instanceof ValueAnimator) {
+                ((ValueAnimator) animator).removeAllUpdateListeners();
+            }
+
             if (Build.VERSION.SDK_INT >= 19) {
                 animator.pause();
             }
@@ -515,7 +546,9 @@ public class QMUIViewHelper {
      * @param value 设置的值
      */
     public static void setPaddingLeft(View view, int value) {
-        view.setPadding(value, view.getPaddingTop(), view.getPaddingRight(), view.getPaddingBottom());
+        if (value != view.getPaddingLeft()) {
+            view.setPadding(value, view.getPaddingTop(), view.getPaddingRight(), view.getPaddingBottom());
+        }
     }
 
     /**
@@ -525,7 +558,9 @@ public class QMUIViewHelper {
      * @param value 设置的值
      */
     public static void setPaddingTop(View view, int value) {
-        view.setPadding(view.getPaddingLeft(), value, view.getPaddingRight(), view.getPaddingBottom());
+        if (value != view.getPaddingTop()) {
+            view.setPadding(view.getPaddingLeft(), value, view.getPaddingRight(), view.getPaddingBottom());
+        }
     }
 
     /**
@@ -535,7 +570,9 @@ public class QMUIViewHelper {
      * @param value 设置的值
      */
     public static void setPaddingRight(View view, int value) {
-        view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), value, view.getPaddingBottom());
+        if (value != view.getPaddingRight()) {
+            view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), value, view.getPaddingBottom());
+        }
     }
 
     /**
@@ -545,7 +582,9 @@ public class QMUIViewHelper {
      * @param value 设置的值
      */
     public static void setPaddingBottom(View view, int value) {
-        view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), value);
+        if (value != view.getPaddingBottom()) {
+            view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), value);
+        }
     }
 
     /**
@@ -559,6 +598,27 @@ public class QMUIViewHelper {
      */
     public static boolean getIsLastLineSpacingExtraError() {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
+    }
+
+
+    /**
+     * requestDisallowInterceptTouchEvent 的安全方法。存在它的原因是 QMUIPullRefreshLayout 会拦截这个事件
+     *
+     * @param view
+     * @param value
+     */
+    public static void safeRequestDisallowInterceptTouchEvent(@NonNull View view, boolean value) {
+        ViewParent viewParent = view.getParent();
+        if (viewParent != null) {
+            ViewParent layout = viewParent;
+            while (layout != null) {
+                if (layout instanceof QMUIPullRefreshLayout) {
+                    ((QMUIPullRefreshLayout) layout).openSafeDisallowInterceptTouchEvent();
+                }
+                layout = layout.getParent();
+            }
+            viewParent.requestDisallowInterceptTouchEvent(value);
+        }
     }
 
     /**
@@ -611,7 +671,29 @@ public class QMUIViewHelper {
         return view;
     }
 
+    public static void safeSetImageViewSelected(ImageView imageView, boolean selected) {
+        // imageView setSelected 实现有问题。
+        // resizeFromDrawable 中判断 drawable size 是否改变而调用 requestLayout，看似合理，但不会被调用
+        // 因为 super.setSelected(selected) 会调用 refreshDrawableState
+        // 而从 android 6 以后， ImageView 会重载refreshDrawableState，并在里面处理了 drawable size 改变的问题,
+        // 从而导致 resizeFromDrawable 的判断失效
+        Drawable drawable = imageView.getDrawable();
+        if (drawable == null) {
+            return;
+        }
+        int drawableWidth = drawable.getIntrinsicWidth();
+        int drawableHeight = drawable.getIntrinsicHeight();
+        imageView.setSelected(selected);
+        if (drawable.getIntrinsicWidth() != drawableWidth || drawable.getIntrinsicHeight() != drawableHeight) {
+            imageView.requestLayout();
+        }
+    }
 
+
+    /**
+     * please use ImageViewCompat.setImageTintList() replace this.
+     */
+    @Deprecated
     public static ColorFilter setImageViewTintColor(ImageView imageView, @ColorInt int tintColor) {
         LightingColorFilter colorFilter = new LightingColorFilter(Color.argb(255, 0, 0, 0), tintColor);
         imageView.setColorFilter(colorFilter);

@@ -1,11 +1,30 @@
+/*
+ * Tencent is pleased to support the open source community by making QMUI_Android available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the MIT License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.qmuiteam.qmui.util;
 
 import android.graphics.drawable.Drawable;
-import android.text.Spannable;
 import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.view.View;
 
 import com.qmuiteam.qmui.span.QMUIAlignMiddleImageSpan;
 import com.qmuiteam.qmui.span.QMUIMarginImageSpan;
+
+import androidx.annotation.Nullable;
 
 /**
  * @author cginechen
@@ -23,37 +42,99 @@ public class QMUISpanHelper {
      * @param icon 需要被添加的 icon
      * @return 返回带有 icon 的文字
      */
-    public static CharSequence generateSideIconText(boolean left, int iconPadding, CharSequence text, Drawable icon) {
-        if (icon == null) {
+    public static CharSequence generateSideIconText(boolean left,
+                                                    int iconPadding, CharSequence text, Drawable icon) {
+        return generateSideIconText(
+                left, iconPadding, text, icon, 0);
+    }
+
+    public static CharSequence generateSideIconText(boolean left,
+                                                    int iconPadding, CharSequence text, Drawable icon,
+                                                    int iconOffsetY){
+        return generateSideIconText(
+                left, iconPadding, text, icon, iconOffsetY, 0, null);
+    }
+
+    public static CharSequence generateSideIconText(boolean left,
+                                                    int iconPadding, CharSequence text, Drawable icon,
+                                                    int iconTintAttr, @Nullable View skinFollowView){
+        return generateSideIconText(
+                left, iconPadding, text, icon, 0, iconTintAttr, skinFollowView);
+    }
+
+    public static CharSequence generateSideIconText(boolean left,
+                                                    int iconPadding, CharSequence text, Drawable icon,
+                                                    int iconOffsetY, int iconTintAttr,
+                                                    @Nullable View skinFollowView) {
+        return generateHorIconText(text,
+                left ? iconPadding : 0, left ? icon : null, left ? iconTintAttr : 0,
+                left ? 0 : iconPadding, left ? null : icon, left ? 0 : iconTintAttr,
+                iconOffsetY, skinFollowView);
+    }
+
+
+
+    public static CharSequence generateHorIconText(CharSequence text,
+                                                   int leftPadding, Drawable iconLeft,
+                                                   int rightPadding, Drawable iconRight) {
+        return generateHorIconText(text, leftPadding, iconLeft, rightPadding, iconRight,0);
+    }
+
+
+    public static CharSequence generateHorIconText(CharSequence text,
+                                                   int leftPadding, Drawable iconLeft,
+                                                   int rightPadding, Drawable iconRight,
+                                                   int iconOffsetY) {
+        return generateHorIconText(text, leftPadding, iconLeft, 0,
+                rightPadding, iconRight, 0, iconOffsetY, null);
+    }
+
+    public static CharSequence generateHorIconText(CharSequence text,
+                                                   int leftPadding, Drawable iconLeft, int iconLeftTintAttr,
+                                                   int rightPadding, Drawable iconRight, int iconRightTintAttr,
+                                                   @Nullable View skinFollowView) {
+        return generateHorIconText(text, leftPadding, iconLeft, iconLeftTintAttr,
+                rightPadding, iconRight, iconRightTintAttr,0, skinFollowView);
+    }
+
+    public static CharSequence generateHorIconText(CharSequence text,
+                                                   int leftPadding, Drawable iconLeft, int iconLeftTintAttr,
+                                                   int rightPadding, Drawable iconRight, int iconRightTintAttr,
+                                                   int iconOffsetY,
+                                                   @Nullable View skinFollowView) {
+        if (iconLeft == null && iconRight == null) {
             return text;
         }
-
-        icon.setBounds(0, 0, icon.getIntrinsicWidth(), icon.getIntrinsicHeight());
         String iconTag = "[icon]";
         SpannableStringBuilder builder = new SpannableStringBuilder();
         int start, end;
-        if (left) {
+        if (iconLeft != null) {
+            iconLeft.setBounds(0, 0, iconLeft.getIntrinsicWidth(), iconLeft.getIntrinsicHeight());
             start = 0;
             builder.append(iconTag);
             end = builder.length();
-            builder.append(text);
-        } else {
-            builder.append(text);
+
+            QMUIMarginImageSpan imageSpan = new QMUIMarginImageSpan(iconLeft,
+                    QMUIAlignMiddleImageSpan.ALIGN_MIDDLE, 0, leftPadding, iconOffsetY);
+            imageSpan.setSkinSupportWithTintColor(skinFollowView, iconLeftTintAttr);
+            imageSpan.setAvoidSuperChangeFontMetrics(true);
+            builder.setSpan(imageSpan, start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
+        }
+
+        builder.append(text);
+        if (iconRight != null) {
+            iconRight.setBounds(0, 0, iconRight.getIntrinsicWidth(), iconRight.getIntrinsicHeight());
             start = builder.length();
             builder.append(iconTag);
             end = builder.length();
+
+            QMUIMarginImageSpan imageSpan = new QMUIMarginImageSpan(iconRight,
+                    QMUIAlignMiddleImageSpan.ALIGN_MIDDLE, rightPadding, 0, iconOffsetY);
+            imageSpan.setSkinSupportWithTintColor(skinFollowView, iconRightTintAttr);
+            imageSpan.setAvoidSuperChangeFontMetrics(true);
+            builder.setSpan(imageSpan, start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         }
 
-        QMUIMarginImageSpan imageSpan;
-
-        if (left) {
-            imageSpan = new QMUIMarginImageSpan(icon, QMUIAlignMiddleImageSpan.ALIGN_MIDDLE, 0, iconPadding);
-        } else {
-            imageSpan = new QMUIMarginImageSpan(icon, QMUIAlignMiddleImageSpan.ALIGN_MIDDLE, iconPadding, 0);
-        }
-
-        builder.setSpan(imageSpan, start, end, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
-        imageSpan.setAvoidSuperChangeFontMetrics(true);
         return builder;
     }
 }
